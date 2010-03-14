@@ -1,14 +1,18 @@
 package Data::Validator::Simple;
 use strict;
 use warnings;
-our $VERSION = '0.01_01';
+our $VERSION = '0.01_02';
 use Carp ();
 use Data::Validator::Simple::Checker;
 
 sub new {
     my ( $class, %opt ) = @_;
-    my $checker = Data::Validator::Simple::Checker->new;
-    my $self = bless { data => $opt{data}, checker => $checker }, $class;
+    my $self    = bless {
+        data            => $opt{data},
+        default_message => $opt{failed},
+    }, $class;
+    my $checker = Data::Validator::Simple::Checker->new( type => $opt{as} );
+    $self->{checker} = $checker;
     $self;
 }
 
@@ -43,9 +47,10 @@ sub _validate {
         }
     }
     my $result;
-    eval { $result = $self->{checker}->$rule( $self->{data}, $params ) };
+    eval { $result = $self->{checker}->$rule( $self->{data}, $params ); };
     Carp::croak("Can't load \"$rule\" rule\n") if $@;
     return $success if $success && $result;
+    return $self->{default_message} if defined $self->{default_message};
     return $result;
 }
 
@@ -64,14 +69,14 @@ Data::Validator::Simple - Simple data validator. Not only for form validator.
   my $data = Data::Validator::Simple->new( data => 5 );
   my $result = $data->check( ['BETWEEN', 4, 10 ] );
   if( $result ){
-    print "valid";
+      print "valid";
   }else{
-    print "error";
+      print "error";
   }
 
 complex pattern
 
-  my $data = Data::Validator::Simple->new( data => 5 );
+  my $data = Data::Validator::Simple->new( data => 5 , failed => 'failed message' );
   my $result = $data->check(
       {
           rule    => [ 'EQUAL_TO', 6 ],
@@ -100,7 +105,7 @@ if want to use as form validator
       }
    );
   if( $results->{id} && $results->{name} ){
-    print "valid";
+      print "valid";
   }
 
 =head1 DESCRIPTION
@@ -136,6 +141,9 @@ Data::Validator::Simple is a data validator but not only for form validation.
 
   my $data = Data::Validator::Simple->new( data => 5 );
   $data->check( [ 'BETWEEN', 2, 10 ] );
+
+  my $data = Data::Validator::Simple->new( data => [ 'year', 'month', 'date' ], as => 'DATE' );
+  $data->check( [ 'BETWEEN', [ 'year', 'month', 'date' ] , [ 'year', 'month', 'date' ] ] );
 
 =item GREATER_THAN
 

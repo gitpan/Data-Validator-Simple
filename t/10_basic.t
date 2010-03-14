@@ -22,4 +22,18 @@ use_ok('Data::Validator::Simple');
     ok( !$result, 'Result is "invalid"' );
 }
 
+# failed message
+{
+    my $data = Data::Validator::Simple->new( data => 5 , failed => 'failed' );
+    my $result = $data->check( [ 'EQUAL_TO', 4 ] );
+    is( $result, 'failed', "Got failed mssage" );
+}
+
+# date type
+{
+  my $data = Data::Validator::Simple->new( data => [ '2010', '3', '15' ], as => 'DATE' );
+  my $result = $data->check( [ 'BETWEEN', [ '2010', '3', '14' ] , [ '2010', '4', '1' ] ] );
+  ok(  $result, "Check DATE type is success" );
+}
+
 done_testing;
